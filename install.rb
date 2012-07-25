@@ -1,7 +1,7 @@
 require 'fileutils'
 
 here = File.dirname(__FILE__)
-there = defined?(RAILS_ROOT) ? RAILS_ROOT : "#{here}/../../.."
+there = Rails.root
 
 FileUtils.mkdir_p("#{there}/public/javascripts/juggernaut/")
 FileUtils.mkdir_p("#{there}/public/juggernaut/")

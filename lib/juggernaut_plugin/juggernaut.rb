@@ -2,47 +2,47 @@ require "yaml"
 require "socket"
 
 module Juggernaut
-  CONFIG = YAML::load(ERB.new(IO.read("#{RAILS_ROOT}/config/juggernaut_hosts.yml")).result).freeze
+  CONFIG = YAML::load(ERB.new(IO.read("#{::Rails.root}/config/juggernaut_hosts.yml")).result).freeze
   CR = "\0"
-  
+
   class << self
-    
+
     def send_to_all(data)
       fc = {
         :command   => :broadcast,
-        :body      => data, 
+        :body      => data,
         :type      => :to_channels,
         :channels  => []
       }
       send_data(fc)
     end
-    
+
     def send_to_channels(data, channels)
       fc = {
         :command   => :broadcast,
-        :body      => data, 
+        :body      => data,
         :type      => :to_channels,
         :channels  => channels
       }
       send_data(fc)
     end
     alias send_to_channel send_to_channels
-    
+
     def send_to_clients(data, client_ids)
       fc = {
         :command    => :broadcast,
-        :body       => data, 
+        :body       => data,
         :type       => :to_clients,
         :client_ids => client_ids
       }
       send_data(fc)
     end
     alias send_to_client send_to_clients
-    
+
     def send_to_clients_on_channels(data, client_ids, channels)
       fc = {
         :command    => :broadcast,
-        :body       => data, 
+        :body       => data,
         :type       => :to_clients,
         :client_ids => client_ids,
         :channels   => channels
@@ -51,7 +51,7 @@ module Juggernaut
     end
     alias send_to_clients_on_channel send_to_clients_on_channels
     alias send_to_client_on_channels send_to_clients_on_channels
-    
+
     def remove_channels_from_clients(client_ids, channels)
       fc = {
         :command    => :query,
@@ -63,7 +63,7 @@ module Juggernaut
     end
     alias remove_channel_from_client remove_channels_from_clients
     alias remove_channels_from_client remove_channels_from_clients
-    
+
     def remove_all_channels(channels)
       fc = {
         :command    => :query,
@@ -72,7 +72,7 @@ module Juggernaut
       }
       send_data(fc)
     end
-    
+
     def show_clients
       fc = {
         :command  => :query,
@@ -80,7 +80,7 @@ module Juggernaut
       }
       send_data(fc, true).flatten
     end
-    
+
     def show_client(client_id)
       fc = {
         :command    => :query,
@@ -89,7 +89,7 @@ module Juggernaut
       }
       send_data(fc, true).flatten[0]
     end
-    
+
     def show_clients_for_channels(channels)
       fc = {
         :command    => :query,
@@ -103,12 +103,12 @@ module Juggernaut
     def send_data(hash, response = false)
       hash[:channels]   = Array(hash[:channels])   if hash[:channels]
       hash[:client_ids] = Array(hash[:client_ids]) if hash[:client_ids]
-      
+
       res = []
       hosts.each do |address|
         begin
           hash[:secret_key] = address[:secret_key] if address[:secret_key]
-          
+
           @socket = TCPSocket.new(address[:host], address[:port])
           # the \0 is to mirror flash
           @socket.print(hash.to_json + CR)
@@ -120,22 +120,22 @@ module Juggernaut
       end
       res.collect {|r| ActiveSupport::JSON.decode(r.chomp!(CR)) } if response
     end
-    
+
   private
-    
+
     def hosts
-      CONFIG[:hosts].select {|h| 
-        !h[:environment] or h[:environment].to_s == ENV['RAILS_ENV']
+      CONFIG[:hosts].select {|h|
+        !h[:environment] or h[:environment].to_s == Rails.env
       }
     end
-    
+
   end
-  
+
   module RenderExtension
     def self.included(base)
       base.send :include, InstanceMethods
     end
-    
+
     module InstanceMethods
       # We can't protect these as ActionMailer complains
 
@@ -147,8 +147,8 @@ module Juggernaut
               else
                 @template.send(:evaluate_assigns)
               end
-              
-              generator = ActionView::Helpers::PrototypeHelper::JavaScriptGenerator.new(@template, &block)            
+
+              generator = ActionView::Helpers::PrototypeHelper::JavaScriptGenerator.new(@template, &block)
               render_for_juggernaut(generator.to_s, options.is_a?(Hash) ? options[:juggernaut] : nil)
             ensure
               erase_render_results
@@ -168,7 +168,7 @@ module Juggernaut
           if !options or !options.is_a?(Hash)
             return Juggernaut.send_to_all(data)
           end
-          
+
           case options[:type]
             when :send_to_all
               Juggernaut.send_to_all(data)
@@ -204,7 +204,7 @@ module Juggernaut
             raise "You must specify #{a}" unless options[a]
           end
         end
-        
+
     end
   end
 end

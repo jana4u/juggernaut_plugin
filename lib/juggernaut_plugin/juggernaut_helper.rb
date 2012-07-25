@@ -2,7 +2,7 @@ module Juggernaut # :nodoc:
   module JuggernautHelper
 
     def juggernaut(options = {})
-      hosts = Juggernaut::CONFIG[:hosts].select {|h| !h[:environment] or h[:environment] == ENV['RAILS_ENV'].to_sym }
+      hosts = Juggernaut::CONFIG[:hosts].select {|h| !h[:environment] or h[:environment] == Rails.env.to_sym }
       random_host = hosts[rand(hosts.length)]
       options = {
         :host                 => (random_host[:public_host] || random_host[:host]),
@@ -16,7 +16,7 @@ module Juggernaut # :nodoc:
         :flash_color          => "#fff",
         :swf_name             => "juggernaut_flash",
         :bridge_name          => "juggernaut",
-        :debug                => (RAILS_ENV == 'development'),
+        :debug                => Rails.env.development?,
         :reconnect_attempts   => 3,
         :reconnect_intervals  => 3
       }.merge(options)
